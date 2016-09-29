@@ -1,0 +1,403 @@
+#!/bin/bash
+########################################
+#  use x11vnc  for single window
+#  ... you can make vncserver localy 
+#  or use ssh tunel to send and display it on remote
+#
+#########################################
+## possible to use x2x instead of synergy 
+##    ssh -X p34 ' x2x -east -from $DISPLAY -to :0'
+function pick {
+  echo pick window by mouse 1>&2
+
+ LIST=`xprop -root _NET_CLIENT_LIST_STACKING | cut -d\# -f 2 | sed s/,//g`
+## echo listing all windows:  $LIST
+# PICKED=`xprop   | grep window | grep _NET_WM_USER_TIME_WINDOW | cut -d \# -f 2`;
+# echo userTIME = $PICKED 1>&2
+
+# PICKEDg=`xprop   | grep window | grep window | grep  "group leader" | cut -d \: -f 2`;
+########## I read nad tag mousewin
+   XPRO=`xprop`;
+#   echo XPRO===$XPRO 1>&2
+   MD5=`echo $XPRO  | md5sum | cut -d " " -f 1`;
+ PICKEDg=`echo $XPRO  | grep window | grep  "group leader" | cut -d \: -f 2`;
+
+ echo mouse: $MD5 ..  1>&2
+
+
+for x in $LIST
+do 
+
+
+   RES=`xprop -id $x `
+   RES2=`echo $RES | md5sum | cut -d " " -f 1`
+   echo $RES2   1>&2
+   if [  $RES2 == $MD5   ]; then 
+     echo Selected from list and md5 $MD5 1>&2
+     echo $x
+     break
+  fi
+
+done
+
+}
+###############pick end
+
+
+function xls {
+    LIST=`xprop -root _NET_CLIENT_LIST_STACKING | cut -d\# -f 2 | sed s/,//g`
+    for x in $LIST
+    do 
+	echo "${x%,}:`xprop -id ${x%,} WM_CLASS`" ;
+    done
+}
+######### xls end
+
+
+function selectbyname {
+    PRGNAME=$1
+    LIST=`xprop -root _NET_CLIENT_LIST_STACKING | cut -d\# -f 2 | sed s/,//g`
+    for x in $LIST
+    do 
+	#echo ITEM IS $x 
+	RES=`xprop -id ${x%,}  | grep WM_CLASS | grep -e "\"$PRGNAME\""`
+	if [ "$RES" != ""  ]; then 
+	    echo $x 
+	    # echo break after first matching $PRGNAME is $x
+	    break
+	fi
+    done
+}
+############  select by prg name   "roxterm" 
+
+
+
+function print_dot_x11vnc {
+ SRCHID=$1
+ PC34=$2
+ echo print_dot_x11vnc  child=$SRCHID  remote=$PC34 1>&2
+ if [ "$PC34" = "all" ]; then
+cat<<EOF
+#GENERATED FILE
+forever
+display :0
+id $SRCHID
+shared
+EOF
+ else
+cat<<EOF
+#GENERATED FILE
+forever
+display :0
+allow  127.0.0.1,$PC34
+id $SRCHID
+shared
+EOF
+ fi
+}
+############## print config
+# grabptr    readonly
+# grabalways freezes edie input
+#
+
+
+
+function runx11vnc {
+    echo running x11vnc:
+    echo press CTRL-C to kill it
+
+    x11vnc -forever $VONLY -rc ~/.x11vncrc$DIDI  2>/dev/null  &
+
+    PIDX=$!
+    echo PID OF X11VNC IS ........................... $PIDX
+    echo x11vnc running...
+}
+
+
+
+##
+#watch -n 5 'nmap edie -p 5900 | grep open ; if [ $? = 0 ]; then vncviewer edie:0;fi;'
+##
+function sendtop34  {
+ PC34=$1
+ echo sending tunel to /$PC34/
+ ssh -R 5900:localhost:5900 -R 5901:localhost:5901 -R 5902:localhost:5902 $PC34 "sleep 2;export DISPLAY=:0;vncviewer :$DIDI 1>&2 2>/dev/null" &
+ PIDSSH=$!
+ echo PID of SSH ..............................  $PIDSSH
+}
+
+function killthem {
+ echo killing $PIDX
+ kill $PIDSSH
+ kill  $PIDX
+ sleep 1 
+ echo removing ~/.x11vncrc$DIDI
+ rm ~/.x11vncrc$DIDI
+# echo ... just trying one\(two\) more security kills ...
+# kill -9  $PIDSSH
+# kill -9  $PIDX
+ echo ... look at this /ps -ef/ :
+ ps -ef | grep x11vnc | sed -n 's/ \+/ /gp' | cut -d " " -f 2,8 | grep x11vnc
+ echo ... was this  /ps -ef/ clean? need to killall -9 x11vnc ?
+ sleep 5
+}
+
+cleanup()
+# example cleanup function
+{
+  rm -f /tmp/tempfile
+  return $?
+}
+ 
+control_c()
+# run if user hits control-c
+{
+  echo -en "\n*** Ouch! Killing $PIDX and $PIDSSH ***\n"
+  killthem
+  cleanup
+  exit $?
+}
+ 
+function open_x2x_east
+{
+PC34=$1
+EAST=$2
+echo going to $PC34 and $EAST >~/.x11vnc_onewin_x2x
+
+if [ "$EAST" = "east" ];then
+
+ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -east -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
+
+elif  [ "$EAST" = "west" ];then
+
+ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -west -from $DISPLAY -to :0; rm ~?.x2x_connected; fi' 
+
+elif [ "$EAST" = "north" ];then
+ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -north -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
+
+elif [ "$EAST" = "south" ];then
+
+ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -south -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
+
+fi
+rm ~/.x11vnc_onewin_x2x  2>/dev/null
+rm ~/.x11vnc_onewin_active_connection  2>/dev/null
+}
+
+##############################################################3
+##################################
+#############
+# trap keyboard interrupt (control-c)
+trap control_c SIGINT
+ 
+
+  PIDX=9999999
+PIDSSH=9999999
+
+#predefined OPTIONS
+PC34=localhost
+PC34=all
+PICK=0   # no pick
+DIDI=0 
+
+while [[ $# > 0 ]]
+do
+key="$1"
+shift
+
+case $key in
+    -h|--help)
+    echo  Usage: $0 [ -pick \| -n winname] [ -s remotepc ] [ -v ]
+    echo .
+    echo  "  -ls           ... to list windows"
+    echo  "  -pick         ... to pickup window by mouse and run vncserver"
+    echo  "  -name winname ... to pick a window by its name and run vncserver"
+    echo  "  -id   winid   ... test purposes"
+    echo  "  -v            ... remote viewonly"
+    echo  "  -s remotepc   ... use ssh tunel and open vncviewr on remotepc"
+    echo  "  -d [0|1|..|n] ... vnc display number"
+    echo  "  -sel          ... select from ~/.x11vnc_onewin_clients"
+    echo  "  default options:  -pick  and -s all"
+    echo  "  x11vnc_onewin -s p34 -v -d n"
+    exit 0
+#    shift
+    ;;
+    -ls|--list)
+    LS=1
+#    shift
+    ;;
+    -pick)
+    PICK=1
+#    shift
+    ;;
+    -v|--viewonly)
+    VONLY="-viewonly"
+#    shift
+    ;;
+    -n|-name|--name)
+    PICK=0
+    NAME="$1"
+    echo using window name $NAME
+    shift
+    ;;
+    -id)
+    PICK=0
+    IDCMD="$1"
+    echo using window id =  $IDCMD
+    shift
+    ;;
+    -s|--sendto)
+    PC34="$1"
+    echo getopt...REMOTE TO $PC34
+    shift
+    ;;
+    -d|--display)
+    DIDI="$1"
+    echo display = 5900+$DIDI
+    shift
+    ;;
+    -sel|--select)
+    SELECT=1
+    ;;
+    *)
+            # unknown option
+    ;;
+esac
+done
+
+if [[ -n $1 ]]; then
+    echo "Last line of file specified as non-opt/last argument:"
+    tail -1 $1
+fi
+
+########################################### ACT NOW:
+
+
+#A=`ps -ef  | grep "x11vnc_onewin" | grep -v grep`
+A=`ps -ef  | grep ssh | grep connected | grep -v grep`
+#A=`cat ~/.x11vnc_onewin_x2x`
+echo ps on ssh x2x... ==========================
+#echo /$A/
+if [ "$A" = "" ]; then
+ echo i ... ssh connection not found ... running select=1
+ SELECT=1
+else
+ echo ! ... ssh connection found $A ... NOSELECT
+fi
+
+
+if [ "$SELECT" = "1" ]; then
+
+    direction=west
+    if [ -e ~/.x11vnc_clients ]; then
+    if [ `cat ~/.x11vnc_clients | wc -l` -gt "1" ];then
+     O=`cat ~/.x11vnc_clients`;
+     echo i ... several clients
+     
+#     TGT=`zenity --height=300 --list --checklist --column=. --column=PC  $O ` ;
+     TGT=`zenity --height=300 --list --radiolist --column=. --column=PC  $O ` ;
+
+     echo + ... select drection:
+     direction=`zenity --height=300 --list --radiolist --column=. --column=PC  true east false west false north false south` ;
+
+    else
+	TGT=`cat  ~/.x11vnc_clients | cut -d " " -f 1`;
+	echo i ... only one client ... using $TGT
+	direction=east
+    fi
+
+     echo i ... selected: $TGT to $direction 
+     echo + ... opening .x2x_east.........................
+     echo selected: $TGT to $direction  > ~/.x11vnc_onewin_active_connection
+
+     open_x2x_east $TGT $direction
+     #     rm  ~/.x11vnc_onewin_x2x
+     rm ~/.x11vnc_onewin_active_connection
+ else
+     echo ! ... no  ~/.x11vnc_clients  defined ... i create one ... run again
+     echo "p34 p34" > ~/.x11vnc_clients
+ fi
+
+exit
+fi
+
+
+
+if [ "$LS" = "1" ]; then
+ xls          #list only
+ exit 0;
+fi
+
+if [ "$PC34" != "localhost" ]; then
+ echo parameter: SENDING TO $PC34
+fi
+
+if [ "$DIDI" = "n" ]; then
+ echo trying to set new DISPLAY
+ for (( DIDI=0;DIDI<9;DIDI++));do
+   if [ -e ~/.x11vncrc$DIDI ]; then
+    echo ~/.x11vncrc$DIDI  exists... I go to next
+   else
+    echo DIDI file ~/.x11vncrc$DIDI nEx ... $DIDI DISPLAY is new blue
+    break
+   fi
+ done
+fi
+
+
+
+if [ "$PC34" = "all" ]; then
+echo you can use on remote:
+echo  watch -n 5 'nmap edie -p 5900 | grep open ; if [ $? = 0 ]; then vncviewer edie:0;fi;'
+echo .
+fi
+
+
+
+if [ "$PICK" = "1" -o "$NAME" != "" -o "$IDCMD" != "" ]; then
+    WIN=0x0
+    if  [ "$PICK" = "1" ]; then
+	echo PICK WINDOW:
+	WIN=$(pick)
+	echo returned $WIN
+    fi
+    if  [ "$NAME" != "" ]; then
+	WIN=$(selectbyname $NAME)
+    fi
+    if  [ "$IDCMD" != "" ]; then
+	WIN=$IDCMD
+    fi
+    print_dot_x11vnc "$WIN"  $PC34
+    print_dot_x11vnc "$WIN" $PC34 >~/.x11vncrc$DIDI
+    runx11vnc
+    if [ "$PC34" != "all" ]; then
+	sendtop34 $PC34
+#	echo opening X2X $PC34
+#	open_x2x_east $PC34
+    fi
+
+
+# sed -n 's/ \+/ /gp' | cut -d " " -f 1-8 
+   # main() loop
+   while true; do 
+       echo ______________________________________________ CTRL-C
+         ps -ef | grep x11vnc | grep $PIDX;
+# grep x11vnc | grep $PIDX;
+       ps -ef | grep ssh | grep $PIDSSH;
+       if [  "$PC34" != "all" -a $? != 0 ]; then
+	   echo NO MORE SSH TUNEL...breaking
+	   break;
+       fi
+       sleep 2
+     done
+
+    killthem
+exit 0;
+fi
+
+
+#if [ "$1" = "-name" ]; then
+# WIN=$(selectbyname $2)
+
+
+exit 0
