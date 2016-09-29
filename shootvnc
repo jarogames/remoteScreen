@@ -1,41 +1,69 @@
 #!/bin/bash
 COMMAND=$1
 if [ "$COMMAND" = "" ]; then
-    echo   give me a program to run ... emacs...geeqie
+    echo  ...  give me a program to run ... emacs...geeqie
     
 fi
+xdotool -v > /dev/null
+if [ "$?" != "0" ]; then
+    echo u need xdotool
+    exit
+fi
+#export DISPLAY=:0; xdotool type "export DISPLAY=:1"
+#exit
+#
+# with this i can check if there is something on DISPLAY:1
+# if yes, i do nothing
+# if not i kill all
+#
+function CHECKDISPLAY {
+pid=(`ps  | grep -v xmonad | grep -v x2x | tail -n +2 | awk '{print $1,"\n"}' `);for i in "${pid[@]}"; do cat /proc/$i/environ 2>/dev/null | tr '\0' '\n' | grep '^DISPLAY=:1';  if [ "$?" = "0" ]; then ps | grep $i; else pkill x2x; pkill Xtightvnc; export DISPLAY=:0; fi; done
+}
 
+
+####################
+#
+#   YES VNC.... I KILL ALL  .... SWITCH on/off/on/off
+####################
 
 ps -ef | grep Xtightvnc | grep -v if | grep desktop;
 if [ \"$?\" = \"0\" ]; then
- echo KILL;
+ echo KILL ============================================= KILL
  pkill Xtightvnc;
  pkill x2x
 
- export DISPLAY=:0
+# export DISPLAY=:0
+export DISPLAY=:0;  xdotool type "export DISPLAY=:0.0"
 # ssh -X p34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; pkill -9 x2x; rm ~/.x2x_connected; else  touch ~/.x2x_connected;x2x -east -from :$DISPLAY -to :0; rm ~/.x2x_connected; fi'
 
 else
 
 
     
-echo OK;
-vncserver -geometry 1024x768 2>/dev/null
+echo OK .. running VNC ...................
+vncserver -geometry 1024x768 1>&2 2>/dev/null 
 
-export DISPLAY=:1;
-echo ... running xmonad
+export DISPLAY=:1
+echo ... running xmonad ...............
 xmonad-session &
-echo ... running x2x
+echo $?
+
+echo ... running x2x  ..................
 x2x -east -from :0 -to  :1 &
 
-echo running $COMMAND
-echo ... after - I quit ....................
-$COMMAND
-echo QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQUIT
-sleep 1
-export DISPLAY=:0
+#echo running $COMMAND
+#echo ... after - I quit ....................
+#$COMMAND
+
+#(echo going sleep; sleep 10; echo WOKE UP; for ((i=0;i<99999;i++)); do sleep 1;CHECKDISPLAY;done )&
+#echo QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQUIT
+#sleep 1
+#export DISPLAY=:0
 #pkill x2x
 #pkill Xtightvnc
 echo "while inotifywait -e close_write  spiral2cz.tex  ; do lat  spiral2cz.tex; done"
+echo ... make
+#echo "export DISPLAY=:1"
+export DISPLAY=:0; xdotool type "export DISPLAY=:1"
 
 fi
