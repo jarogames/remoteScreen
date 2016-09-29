@@ -1,0 +1,41 @@
+#!/bin/bash
+COMMAND=$1
+if [ "$COMMAND" = "" ]; then
+    echo   give me a program to run ... emacs...geeqie
+    
+fi
+
+
+ps -ef | grep Xtightvnc | grep -v if | grep desktop;
+if [ \"$?\" = \"0\" ]; then
+ echo KILL;
+ pkill Xtightvnc;
+ pkill x2x
+
+ export DISPLAY=:0
+# ssh -X p34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; pkill -9 x2x; rm ~/.x2x_connected; else  touch ~/.x2x_connected;x2x -east -from :$DISPLAY -to :0; rm ~/.x2x_connected; fi'
+
+else
+
+
+    
+echo OK;
+vncserver -geometry 1024x768 2>/dev/null
+
+export DISPLAY=:1;
+echo ... running xmonad
+xmonad-session &
+echo ... running x2x
+x2x -east -from :0 -to  :1 &
+
+echo running $COMMAND
+echo ... after - I quit ....................
+$COMMAND
+echo QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQQUIT
+sleep 1
+export DISPLAY=:0
+#pkill x2x
+#pkill Xtightvnc
+echo "while inotifywait -e close_write  spiral2cz.tex  ; do lat  spiral2cz.tex; done"
+
+fi

@@ -162,24 +162,27 @@ function open_x2x_east
 {
 PC34=$1
 EAST=$2
+echo going to $PC34 and $EAST ... in op_x2x
 echo going to $PC34 and $EAST >~/.x11vnc_onewin_x2x
 
 if [ "$EAST" = "east" ];then
-
+echo east
 ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -east -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
 
 elif  [ "$EAST" = "west" ];then
-
-ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -west -from $DISPLAY -to :0; rm ~?.x2x_connected; fi' 
+echo west
+ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -west -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
 
 elif [ "$EAST" = "north" ];then
+    echo nord
 ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -north -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
 
 elif [ "$EAST" = "south" ];then
-
+echo sou
 ssh -X $PC34 'if [ -e ~/.x2x_connected ]; then echo ALREADY RUNS..remove .x2x_connected on $PC34; else  touch ~/.x2x_connected;x2x -south -from $DISPLAY -to :0; rm ~/.x2x_connected; fi' 
 
 fi
+echo out of all world dirs
 rm ~/.x11vnc_onewin_x2x  2>/dev/null
 rm ~/.x11vnc_onewin_active_connection  2>/dev/null
 }
@@ -308,9 +311,11 @@ if [ "$SELECT" = "1" ]; then
 
      echo i ... selected: $TGT to $direction 
      echo + ... opening .x2x_east.........................
+     echo selected: $TGT to $direction  
      echo selected: $TGT to $direction  > ~/.x11vnc_onewin_active_connection
 
      open_x2x_east $TGT $direction
+     echo DONE open_x2x_east function
      #     rm  ~/.x11vnc_onewin_x2x
      rm ~/.x11vnc_onewin_active_connection
  else
