@@ -9,3 +9,7 @@ Terminals
 * Hint with terminal ` ssh -t edie 'screen -S panel1'`
 
 * Very nice thing - `script -f /dev/pts/24` - could be more elaborated - file over ssh
+
+   ** `script -f | ssh p34 "cat > /dev/pts/12" ` leaves no output on home terminal
+   **  `tail -f typescript | ssh p34 "cat > /dev/pts/22"` and `script -f` after WORKS
+   
