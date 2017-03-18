@@ -13,3 +13,8 @@ Terminals
    ** `script -f | ssh p34 "cat > /dev/pts/12" ` leaves no output on home terminal
    **  `tail -f typescript | ssh p34 "cat > /dev/pts/22"` and `script -f` after WORKS
    
+`tail -f ~/typescript | ssh p34 "cat > /dev/pts/22" & script -f ~/typescript`
+
+`tail -f ~/typescript | ssh fedo "cat > /dev/pts/33" & script -f ~/typescript`
+
+`tail -f ~/typescript | ssh p34 "cat > /dev/pts/22" & script -f ~/typescript`
